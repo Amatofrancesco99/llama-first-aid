@@ -669,95 +669,304 @@ def update_graphs(start_date, end_date, app_version, graph_4_severity_level, gra
 
     # SEVENTH PLOT
     # Prepare the data
-    coordinates_df = filtered_df[['country', 'session_id']]  # Adjust as necessary
-    coordinates_df['country'] = coordinates_df['country'].replace(country_translation)
+    if graph_7_toggle_button == False:
+        coordinates_df = filtered_df[['country', 'session_id']]  # Adjust as necessary
+        coordinates_df['country'] = coordinates_df['country'].replace(country_translation)
 
-    # Group by country and sum the sessions
-    country_sessions = coordinates_df.groupby('country')['session_id'].nunique().reset_index()
+        # Group by country and sum the sessions
+        country_sessions = coordinates_df.groupby('country')['session_id'].nunique().reset_index()
 
-    # Create a choropleth map with a custom color scale
-    choropleth_map = px.choropleth(country_sessions,
-                                    locations='country',
-                                    locationmode='country names',
-                                    color='session_id',
-                                    hover_name='country',
-                                    color_continuous_scale=["#d1e9d3", "#4caf50"])
+        # Create a choropleth map with a custom color scale
+        choropleth_map = px.choropleth(country_sessions,
+                                        locations='country',
+                                        locationmode='country names',
+                                        color='session_id',
+                                        hover_name='country',
+                                        color_continuous_scale=["#d1e9d3", "#4caf50"])
 
-    # Update layout for a more beautiful map
-    choropleth_map.update_layout(
-        coloraxis_colorbar_title="Sessions",
-        coloraxis_colorbar_x=0,  # Position the color bar to the left
-        coloraxis_colorbar_xpad=10,  # Optional padding from the map
-        coloraxis_colorbar_ypad=10,  # Optional padding from the map
-        geo=dict(
-            projection_type="natural earth",  # Using a more beautiful map projection (Natural Earth)
-            showcoastlines=True,  # Display coastlines
-            coastlinecolor="gray",  # Set coastline color to gray for subtlety
-            showland=True,  # Show land areas
-            landcolor="whitesmoke",  # Set land color to a soft grayish white
-            subunitcolor="gray",  # Subunit color for borders
-            showlakes=True,  # Display lakes
-            lakecolor="lightblue",  # Color of lakes for better visual contrast
-        ),
-        title_x=0.5,  # Center the title horizontally
-        title_font=dict(
-            size=24,  # Title font size
-            family="Arial, sans-serif",  # Title font family
-            color="black"  # Title font color
-        ),
-        margin={"r": 0, "t": 50, "l": 0, "b": 0},  # Adjust margins for better padding
-        font=dict(
-            family="Arial, sans-serif",  # Font family for labels and hover info
-            size=14,  # Font size
-            color="black"  # Font color
-        ),
-    )
+        # Update layout for a more beautiful map
+        choropleth_map.update_layout(
+            coloraxis_colorbar_title="Sessions",
+            coloraxis_colorbar_x=0,  # Position the color bar to the left
+            coloraxis_colorbar_xpad=10,  # Optional padding from the map
+            coloraxis_colorbar_ypad=10,  # Optional padding from the map
+            geo=dict(
+                projection_type="natural earth",  # Using a more beautiful map projection (Natural Earth)
+                showcoastlines=True,  # Display coastlines
+                coastlinecolor="gray",  # Set coastline color to gray for subtlety
+                showland=True,  # Show land areas
+                landcolor="whitesmoke",  # Set land color to a soft grayish white
+                subunitcolor="gray",  # Subunit color for borders
+                showlakes=True,  # Display lakes
+                lakecolor="lightblue",  # Color of lakes for better visual contrast
+            ),
+            title_x=0.5,  # Center the title horizontally
+            title_font=dict(
+                size=24,  # Title font size
+                family="Arial, sans-serif",  # Title font family
+                color="black"  # Title font color
+            ),
+            margin={"r": 0, "t": 50, "l": 0, "b": 0},  # Adjust margins for better padding
+            font=dict(
+                family="Arial, sans-serif",  # Font family for labels and hover info
+                size=14,  # Font size
+                color="black"  # Font color
+            ),
+        )
+    else:
+        # Assuming filtered_df already has 'timestamp' column
+        coordinates_df = filtered_df[['country', 'session_id', 'timestamp']]  # Keep country, session_id, and timestamp
+        coordinates_df['country'] = coordinates_df['country'].replace(country_translation)
+
+        # Remove minutes and downcast to the nearest hour
+        coordinates_df['timestamp'] = coordinates_df['timestamp'].dt.floor('H')  # Floor to the nearest hour (remove minutes and seconds)
+
+        # Create a 'date_hour' column by extracting the date and hour (without minutes and seconds)
+        coordinates_df['date_hour'] = coordinates_df['timestamp'].dt.strftime('%Y-%m-%d %H')  # Format as 'YYYY-MM-DD HH'
+
+        # Convert 'date_hour' back to a datetime object for proper sorting and aggregation
+        coordinates_df['date_hour'] = pd.to_datetime(coordinates_df['date_hour'], format='%Y-%m-%d %H')
+
+        # Sort the data by 'date_hour' to ensure correct chronological order
+        coordinates_df = coordinates_df.sort_values('date_hour')
+
+        # Group by country and date_hour, then count the unique sessions
+        country_sessions = coordinates_df.groupby(['country', 'date_hour']).agg({'session_id': 'nunique'}).reset_index()
+
+        # Ensure 'date_hour' is sorted chronologically
+        country_sessions['date_hour'] = pd.to_datetime(country_sessions['date_hour'], format='%Y-%m-%d %H')
+
+        # Sort the grouped data explicitly by 'date_hour' to ensure correct ordering
+        country_sessions = country_sessions.sort_values('date_hour')
+
+        # Create the animated choropleth map
+        choropleth_map = px.choropleth(country_sessions,
+                                        locations='country',
+                                        locationmode='country names',
+                                        color='session_id',
+                                        hover_name='country',
+                                        animation_frame='date_hour',  # Animate by the sorted 'date_hour'
+                                        color_continuous_scale=["#d1e9d3", "#4caf50"])
+
+        # Update layout for the map appearance
+        choropleth_map.update_layout(
+            coloraxis_colorbar_title="Sessions",
+            coloraxis_colorbar_x=0,  # Position the color bar to the left
+            coloraxis_colorbar_xpad=10,
+            coloraxis_colorbar_ypad=10,
+            geo=dict(
+                projection_type="natural earth",
+                showcoastlines=True,
+                coastlinecolor="gray",
+                showland=True,
+                landcolor="whitesmoke",
+                subunitcolor="gray",
+                showlakes=True,
+                lakecolor="lightblue",
+            ),
+            title_x=0.5,
+            title_font=dict(
+                size=24,
+                family="Arial, sans-serif",
+                color="black"
+            ),
+            margin={"r": 0, "t": 50, "l": 0, "b": 0},
+            font=dict(
+                family="Arial, sans-serif",
+                size=14,
+                color="black"
+            ),
+            # Add autoplay and pause buttons, positioned in the center
+            updatemenus=[
+                {
+                    'buttons': [
+                        {
+                            'args': [None, {'frame': {'duration': 500, 'redraw': True}, 'fromcurrent': True}],
+                            'label': 'Play',
+                            'method': 'animate',
+                        },
+                        {
+                            'args': [[None], {'frame': {'duration': 0, 'redraw': False}, 'mode': 'immediate', 'transition': {'duration': 0}}],
+                            'label': 'Pause',
+                            'method': 'animate',
+                        }
+                    ],
+                    'direction': 'left',
+                    'pad': {'r': 10, 't': 87},
+                    'showactive': False,
+                    'type': 'buttons',
+                    'x': 0.5,  # Center the play/pause buttons horizontally
+                    'xanchor': 'center',  # Center the buttons horizontally
+                    'y': -0.12,  # Position the buttons just above the slider (reduced space)
+                    'yanchor': 'top',
+                }
+            ],
+            sliders=[{
+                'currentvalue': {
+                    'visible': False,  # Hide the date_hour label on top of the slider
+                },
+                'pad': {"t": 0},  # Remove the gap between the map and the slider
+                'len': 0.8,  # Reduce the size of the slider (make it 80% of the total width)
+                'x': 0.5,  # Center the slider horizontally
+                'xanchor': 'center',  # Center the slider horizontally
+                'y': -0.2  # Position the slider just below the buttons (reduced space)
+            }]
+        )
 
 
     # EIGHTH PLOT
     # Replace native country names with their English equivalents
-    hm_df = filtered_df[['location', 'session_id']]  # Ensure this contains lat, long, and session_id
-    hm_df['latitude'] = hm_df['location'].apply(lambda x: eval(x)[0])
-    hm_df['longitude'] = hm_df['location'].apply(lambda x: eval(x)[1])
+    if graph_8_toggle_button == False:
+        if graph_8_severity_level != 'All':
+            filtered_df = filtered_df[filtered_df['severity'] == graph_8_severity_level]
+    
+        if graph_8_medical_class != 'All':
+            filtered_df = filtered_df[filtered_df['medical_class'] == graph_8_medical_class]
 
-    # Group by latitude and longitude, summing the sessions
-    coordinates_sessions = hm_df.groupby(['latitude', 'longitude'])['session_id'].nunique().reset_index()
+        hm_df = filtered_df[['location', 'session_id']]  # Ensure this contains lat, long, and session_id
+        hm_df['latitude'] = hm_df['location'].apply(lambda x: eval(x)[0])
+        hm_df['longitude'] = hm_df['location'].apply(lambda x: eval(x)[1])
 
-    # Create a heatmap using scatter_mapbox
-    heatmap_map = px.scatter_mapbox(
-        coordinates_sessions,
-        lat="latitude",
-        lon="longitude",
-        size="session_id",  # The size of the points is determined by the session count
-        color="session_id",  # The color of the points is also based on the session count
-        hover_name="session_id",  # Display session count on hover
-        color_continuous_scale=["#ffcccc", "#990000"],  # Color scale from light red to dark red
-        labels={'session_id': 'Sessions'},
-        size_max=8,  # Reduced maximum bubble size
-    )
+        # Group by latitude and longitude, summing the sessions
+        coordinates_sessions = hm_df.groupby(['latitude', 'longitude'])['session_id'].nunique().reset_index()
 
-    # Update layout to make the heatmap visually beautiful with reduced bubble sizes
-    heatmap_map.update_layout(
-        mapbox_style="carto-positron",  # Map style; you can use "stamen-terrain" or others
-        mapbox_zoom=2,  # Set default zoom level for Europe (zoom level 4 works well)
-        mapbox_center={"lat": 50, "lon": 10},  # Center the map on Europe (roughly lat=50, lon=10)
-        title_x=0.5,  # Center the title horizontally
-        title_font=dict(
-            size=24,  # Title font size
-            family="Arial, sans-serif",  # Title font family
-            color="black"  # Title font color
-        ),
-        coloraxis_colorbar_title="Sessions",  # Title for the color scale
-        font=dict(
-            family="Arial, sans-serif",  # Font family for labels and hover info
-            size=14,  # Font size
-            color="black"  # Font color
-        ),
-        mapbox=dict(
-            style="carto-positron",  # Style of the map background (clean white background)
-        ),
-        autosize=True,  # Automatically adjust size based on the data
-    )
+        # Create a heatmap using scatter_mapbox
+        heatmap_map = px.scatter_mapbox(
+            coordinates_sessions,
+            lat="latitude",
+            lon="longitude",
+            size="session_id",  # The size of the points is determined by the session count
+            color="session_id",  # The color of the points is also based on the session count
+            hover_name="session_id",  # Display session count on hover
+            color_continuous_scale=["#ffcccc", "#990000"],  # Color scale from light red to dark red
+            labels={'session_id': 'Sessions'},
+            size_max=8,  # Reduced maximum bubble size
+        )
+
+        # Update layout to make the heatmap visually beautiful with reduced bubble sizes
+        heatmap_map.update_layout(
+            mapbox_style="carto-positron",  # Map style; you can use "stamen-terrain" or others
+            mapbox_zoom=2,  # Set default zoom level for Europe (zoom level 4 works well)
+            mapbox_center={"lat": 50, "lon": 10},  # Center the map on Europe (roughly lat=50, lon=10)
+            title_x=0.5,  # Center the title horizontally
+            title_font=dict(
+                size=24,  # Title font size
+                family="Arial, sans-serif",  # Title font family
+                color="black"  # Title font color
+            ),
+            coloraxis_colorbar_title="Sessions",  # Title for the color scale
+            font=dict(
+                family="Arial, sans-serif",  # Font family for labels and hover info
+                size=14,  # Font size
+                color="black"  # Font color
+            ),
+            mapbox=dict(
+                style="carto-positron",  # Style of the map background (clean white background)
+            ),
+            autosize=True,  # Automatically adjust size based on the data
+        )
+    else:
+        if graph_8_severity_level != 'All':
+            filtered_df = filtered_df[filtered_df['severity'] == graph_8_severity_level]
+    
+        if graph_8_medical_class != 'All':
+            filtered_df = filtered_df[filtered_df['medical_class'] == graph_8_medical_class]
+            
+        # Assuming filtered_df already has 'timestamp' and 'location' columns
+        hm_df = filtered_df[['location', 'session_id', 'timestamp']]  # Ensure this contains lat, long, session_id, and timestamp
+
+        # Convert location to latitude and longitude
+        hm_df['latitude'] = hm_df['location'].apply(lambda x: eval(x)[0])
+        hm_df['longitude'] = hm_df['location'].apply(lambda x: eval(x)[1])
+
+        # Create a 'date_hour' column by extracting the date and hour from the timestamp
+        hm_df['date_hour'] = hm_df['timestamp'].dt.strftime('%Y-%m-%d %H')  # Format as 'YYYY-MM-DD HH'
+
+        # Convert 'date_hour' back to datetime for proper sorting and grouping
+        hm_df['date_hour'] = pd.to_datetime(hm_df['date_hour'], format='%Y-%m-%d %H')
+
+        # Sort the data by 'date_hour' to ensure correct chronological order
+        hm_df = hm_df.sort_values('date_hour')
+
+        # Group by latitude, longitude, and date_hour, then count the unique sessions
+        coordinates_sessions = hm_df.groupby(['latitude', 'longitude', 'date_hour'])['session_id'].nunique().reset_index()
+
+        # Ensure 'date_hour' is sorted chronologically
+        coordinates_sessions['date_hour'] = pd.to_datetime(coordinates_sessions['date_hour'], format='%Y-%m-%d %H')
+
+        # Sort the grouped data explicitly by 'date_hour' to ensure correct ordering
+        coordinates_sessions = coordinates_sessions.sort_values('date_hour')
+
+        # Create the animated heatmap using scatter_mapbox
+        heatmap_map = px.scatter_mapbox(
+            coordinates_sessions,
+            lat="latitude",
+            lon="longitude",
+            size="session_id",  # The size of the points is determined by the session count
+            color="session_id",  # The color of the points is also based on the session count
+            hover_name="session_id",  # Display session count on hover
+            color_continuous_scale=["#ffcccc", "#990000"],  # Color scale from light red to dark red
+            labels={'session_id': 'Sessions'},
+            size_max=8,  # Reduced maximum bubble size
+            animation_frame="date_hour",  # Animate by 'date_hour'
+        )
+
+        # Update layout for the heatmap appearance
+        heatmap_map.update_layout(
+            mapbox_style="carto-positron",  # Map style; you can use "stamen-terrain" or others
+            mapbox_zoom=2,  # Set default zoom level for Europe (zoom level 4 works well)
+            mapbox_center={"lat": 50, "lon": 10},  # Center the map on Europe (roughly lat=50, lon=10)
+            title_x=0.5,  # Center the title horizontally
+            title_font=dict(
+                size=24,  # Title font size
+                family="Arial, sans-serif",  # Title font family
+                color="black"  # Title font color
+            ),
+            coloraxis_colorbar_title="Sessions",  # Title for the color scale
+            font=dict(
+                family="Arial, sans-serif",  # Font family for labels and hover info
+                size=14,  # Font size
+                color="black"  # Font color
+            ),
+            mapbox=dict(
+                style="carto-positron",  # Style of the map background (clean white background)
+            ),
+            autosize=True,  # Automatically adjust size based on the data
+            updatemenus=[
+                {
+                    'buttons': [
+                        {
+                            'args': [None, {'frame': {'duration': 500, 'redraw': True}, 'fromcurrent': True}],
+                            'label': 'Play',
+                            'method': 'animate',
+                        },
+                        {
+                            'args': [[None], {'frame': {'duration': 0, 'redraw': False}, 'mode': 'immediate', 'transition': {'duration': 0}}],
+                            'label': 'Pause',
+                            'method': 'animate',
+                        }
+                    ],
+                    'direction': 'left',
+                    'pad': {'r': 10, 't': 87},
+                    'showactive': False,
+                    'type': 'buttons',
+                    'x': 0.5,  # Center the play/pause buttons horizontally
+                    'xanchor': 'center',  # Center the buttons horizontally
+                    'y': -0.12,  # Position the buttons just above the slider (reduced space)
+                    'yanchor': 'top',
+                }
+            ],
+            sliders=[{
+                'currentvalue': {
+                    'visible': False,  # Hide the date_hour label on top of the slider
+                },
+                'pad': {"t": 0},  # Remove the gap between the map and the slider
+                'len': 0.8,  # Reduce the size of the slider (make it 80% of the total width)
+                'x': 0.5,  # Center the slider horizontally
+                'xanchor': 'center',  # Center the slider horizontally
+                'y': -0.2  # Position the slider just below the buttons (reduced space)
+            }]
+        )
 
 
     # --- Return the figures for all graphs ---
