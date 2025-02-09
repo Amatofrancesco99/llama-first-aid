@@ -4,5 +4,6 @@ dash-core-components==2.0.0
 dash-html-components==2.0.0
 dash-table==5.0.0
 pandas==2.2.3
+numpy==1.26.4
 plotly==6.0.0
 plotly-express==0.4.1

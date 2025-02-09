@@ -1,10 +1,12 @@
 import dash
+import ast
 from dash import dcc, html
 import plotly.express as px
 import plotly.graph_objects as go
 import pandas as pd
 import dash_bootstrap_components as dbc
 from dash.dependencies import Input, Output
+import numpy as np
 
 import sys
 sys.path.append('src')
@@ -62,6 +64,7 @@ medical_classes.insert(0, {'label': 'No filter', 'value': 'All'})
 df['timestamp'] = pd.to_datetime(df['timestamp'])
 
 
+##########################################################        USERS PAGE       ##################################################################
 # Layout for users Page
 users_page = html.Div([
     # Navbar with title, logo, and users link
@@ -70,9 +73,7 @@ users_page = html.Div([
             dbc.NavItem(dbc.NavLink("Users", href="/")),
             dbc.NavItem(dbc.NavLink("Performance", href="/performance")),  # Performance link
         ],
-        brand=html.Div([
-            app_title  # This will display the custom title
-        ]),
+        brand=app_title,  # This will display the custom title
         brand_href="/",
         color="primary",
         dark=True,
@@ -114,15 +115,21 @@ users_page = html.Div([
     html.Div([
         dbc.Row([
             dbc.Col([
-                html.H6("This month's sessions over last month's sessions", style={'textAlign': 'center'}),
-                html.Div(id='graph-1-users', style={'fontSize': 20, 'fontWeight': 'bold', 'textAlign': 'center'})
+                dbc.Row([
+                    html.H6("This month's sessions over last month's sessions", style={'textAlign': 'center'}),
+                    html.Div(id='graph-1-1-users', style={'fontSize': 20, 'fontWeight': 'bold', 'textAlign': 'center'})
+                ]),
+                dbc.Row([
+                    html.H6("Sessions with location enabled over sessions with location disabled", style={'textAlign': 'center'}),
+                    html.Div(id='graph-1-2-users', style={'fontSize': 20, 'fontWeight': 'bold', 'textAlign': 'center'})
+                ], style={'padding': '50px'}),
             ], width=4),
             dbc.Col([
-                html.H6("Average sessions per day", style={'textAlign': 'center'}),
+                html.H6("Average daily sessions", style={'textAlign': 'center'}),
                 html.Div(id='graph-2-users', style={'fontSize': 20, 'fontWeight': 'bold', 'textAlign': 'center'})
             ], width=4),
             dbc.Col([
-                html.H6("Sessions per day (trend)", style={'textAlign': 'center'}),
+                html.H6("Daily sessions (trend)", style={'textAlign': 'center'}),
                 dcc.Graph(id='graph-3-users'),
             ], width=4)
         ])
@@ -220,63 +227,91 @@ users_page = html.Div([
     ], style={'padding': '15px'}),
 ])
 
+
+##########################################################        PERFORMANCE PAGE       ##################################################################
 # Layout for performance Page
-#performance_page = html.Div([
-#    dbc.NavbarSimple(
-#        children=[
-#            dbc.NavItem(dbc.NavLink("Users", href="/")),
-#            dbc.NavItem(dbc.NavLink("Performance", href="/performance")),  # Added Performance link
-#        ],
-#        brand=app_title,
-#        brand_href="/performance",
-#        color="primary",
-#        dark=True,
-#        className="mb-4",
-#    ),
+performance_page = html.Div([
+    dbc.NavbarSimple(
+        children=[
+            dbc.NavItem(dbc.NavLink("Users", href="/")),
+            dbc.NavItem(dbc.NavLink("Performance", href="/performance")),  # Added Performance link
+        ],
+        brand=app_title,
+        brand_href="/performance",
+        color="primary",
+        dark=True,
+        className="mb-4",
+    ),
     
     # Filters Row - Start and End Date Filters, app_version filter
-    #html.Div([
-    #    dbc.Row([
-    #        dbc.Col([
-    #            dcc.DatePickerRange(
-    #                id='date-picker-range-users',  # Unique ID for users page filter
-    #                start_date=(df['timestamp'].max() - pd.DateOffset(months=1)).strftime('%Y-%m-%d'),
-    #                end_date=df['timestamp'].max().strftime('%Y-%m-%d'),
-    #                display_format='YYYY-MM-DD',
-    #                style={'width': '100%'}
-    #            )
-    #        ], width=4),
-    #        dbc.Col([  # app_version filter dropdown
-    #            dcc.Dropdown(
-    #                id='app-version-users',
-    #                options=app_versions,
-    #                value='',  # Default value: empty string for "No filter"
-    #                style={'width': '100%'}
-    #            )
-    #        ], width=4),
-    #        dbc.Col([  # Empty column for alignment
-    #        ], width=4),
-    #    ])
-    #], style={'padding': '20px'}),
+    html.Div([
+        dbc.Row([
+            dbc.Col([
+                html.Div([
+                    html.Label('Date:', style={'margin-right': '10px', 'display': 'inline-block'}),
+                    dcc.DatePickerRange(
+                        id='date-picker-range-users',  # Unique ID for users page filter
+                        start_date=(df['timestamp'].max() - pd.DateOffset(months=1)).strftime('%Y-%m-%d'),
+                        end_date=df['timestamp'].max().strftime('%Y-%m-%d'),
+                        display_format='YYYY-MM-DD',
+                        style={'width': '100%'}
+                    )
+                ]),
+            ], width=4),
+            dbc.Col([  # app_version filter dropdown
+                html.Div([
+                    html.Label('App:', style={'margin-right': '10px', 'display': 'inline-block'}),
+                    dcc.Dropdown(
+                        id='app-version-users',
+                        options=app_versions,
+                        value='All',
+                        style={'width': '100%'}
+                    )
+                ]),
+            ], width=4),
+            dbc.Col([  # Empty column for alignment
+            ], width=4),
+        ])
+    ], style={'padding': '20px'}),
 
-    # Performance Graphs - 4 Columns
-    #html.Div([
-    #    dbc.Row([
-    #        dbc.Col([
-    #            dcc.Graph(id='graph-1-performance'),
-    #        ], width=3),
-    #        dbc.Col([
-    #            dcc.Graph(id='graph-2-performance'),
-    #        ], width=3),
-    #        dbc.Col([
-    #            dcc.Graph(id='graph-3-performance'),
-    #        ], width=3),
-    #        dbc.Col([
-    #            dcc.Graph(id='graph-4-performance'),
-    #        ], width=3),
-    #    ])
-    #], style={'padding': '20px'})
-#])
+    html.Div([
+        dbc.Row([
+            dbc.Col([
+                dbc.Row([
+                    html.H6("Average response time per single interaction", style={'textAlign': 'center'}),
+                    html.Div(id='graph-1-1-performance', style={'fontSize': 20, 'fontWeight': 'bold', 'textAlign': 'center'})
+                ]),
+                dbc.Row([
+                    html.H6("Average daily response time", style={'textAlign': 'center'}),
+                    html.Div(id='graph-1-2-performance', style={'fontSize': 20, 'fontWeight': 'bold', 'textAlign': 'center'})
+                ], style={'padding': '50px'}),
+                dbc.Row([
+                    html.H6("Average number of interactions per session", style={'textAlign': 'center'}),
+                    html.Div(id='graph-1-3-performance', style={'fontSize': 20, 'fontWeight': 'bold', 'textAlign': 'center'})
+                ]),
+            ], width=4),
+            dbc.Col([
+                dbc.Row([
+                    html.H6("Average time to identify issue", style={'textAlign': 'center'}),
+                    html.Div(id='graph-2-1-performance', style={'fontSize': 20, 'fontWeight': 'bold', 'textAlign': 'center'})
+                ]),
+                dbc.Row([
+                    html.H6("Average time to solve issue", style={'textAlign': 'center'}),
+                    html.Div(id='graph-2-2-performance', style={'fontSize': 20, 'fontWeight': 'bold', 'textAlign': 'center'})
+                ], style={'padding': '50px'}),
+                dbc.Row([
+                    html.H6("Average time to identify and solve issue", style={'textAlign': 'center'}),
+                    html.Div(id='graph-2-3-performance', style={'fontSize': 20, 'fontWeight': 'bold', 'textAlign': 'center'})
+                ]),
+            ], width=4),
+            dbc.Col([
+                html.H6("Average response time, per sessions, per day (trend)", style={'textAlign': 'center'}),
+                dcc.Graph(id='graph-3-performance'),
+            ], width=4)
+        ])
+    ], style={'padding': '20px'}),
+
+])
 
 # Set up routing for pages (users and performance)
 app.layout = html.Div([
@@ -295,17 +330,21 @@ def display_page(pathname):
     else:  # users page or any other invalid URL will show users
         return users_page
 
+
+##########################################################        USERS PAGE       ##################################################################
 @app.callback(
     [
-        Output('graph-1-users', 'children'),
-        Output('graph-1-users', 'style'),
+        Output('graph-1-1-users', 'children'),
+        Output('graph-1-1-users', 'style'),
+        Output('graph-1-2-users', 'children'),
+        Output('graph-1-2-users', 'style'),
         Output('graph-2-users', 'children'),
         Output('graph-3-users', 'figure'),
         Output('graph-4-users', 'figure'),
         Output('graph-5-users', 'figure'),
         Output('graph-6-users', 'figure'),
         Output('graph-7-users', 'figure'),
-        Output('graph-8-users', 'figure'),
+        Output('graph-8-users', 'figure')
     ],
     [
         Input('date-picker-range-users', 'start_date'),
@@ -333,34 +372,56 @@ def update_graphs(start_date, end_date, app_version, graph_4_severity_level, gra
         filtered_df = filtered_df[filtered_df['app_version'] == app_version]  # Apply the app_version filter
 
 
-    ## FIRST PLOT
+    ## FIRST PLOT - 1
     # Calculate session count for current and last month
     current_month_sessions = filtered_df[filtered_df['timestamp'].dt.month == pd.to_datetime(end_date).month]['session_id'].nunique()
     last_month_sessions = filtered_df[filtered_df['timestamp'].dt.month == (pd.to_datetime(end_date).month - 1)]['session_id'].nunique()
 
     # Calculate the percentage change (if last_month_sessions > 0)
     if last_month_sessions > 0:
-        percentage_change = ((current_month_sessions - last_month_sessions) / last_month_sessions) * 100
+        percentage_change_1 = (current_month_sessions / last_month_sessions) * 100
     else:
-        percentage_change = '-'  # If no sessions last month, assume no change
+        percentage_change_1 = '-'  # If no sessions last month, assume no change
 
     # Determine color based on percentage change
-    if percentage_change != '-':
-        if percentage_change > 100:
-            color = 'green'
-        elif percentage_change > 0 & percentage_change < 100:
-            color = 'red'
-    else:
-        color = 'black'
+    color_1 = 'black'
+    if percentage_change_1 != '-':
+        if percentage_change_1 >= 100:
+            color_1 = 'green'
+        elif percentage_change_1 >= 0 and percentage_change_1 < 100:
+            color_1 = 'red'
     
     # Style for the percentage text (color)
-    text_style = {
+    text_style_1 = {
         'fontSize': 24,
         'fontWeight': 'bold',
         'textAlign': 'center',
-        'color': color  # Apply dynamic color
+        'color': color_1  # Apply dynamic color
     }
 
+    ## FIRST PLOT - 2
+    sessions_location_enabled = filtered_df[filtered_df['location'] != "[None, None]"]['session_id'].nunique()
+    sessions_location_disabled = filtered_df[filtered_df['location'] == "[None, None]"]['session_id'].nunique()
+
+    if sessions_location_disabled > 0:
+        percentage_change_2 = (sessions_location_enabled / sessions_location_disabled) * 100
+    else:
+        percentage_change_2 = '-'
+
+    color_2 = 'green'
+    if percentage_change_2 != '-':
+        if percentage_change_2 >= 100.0:
+            color_2 = 'green'
+        elif percentage_change_2 >= 0 and percentage_change_2 < 100:
+            color_2 = 'red'
+
+    # Style for the percentage text (color)
+    text_style_2 = {
+        'fontSize': 24,
+        'fontWeight': 'bold',
+        'textAlign': 'center',
+        'color': color_2  # Apply dynamic color
+    }
 
     ## SECOND PLOT
     average_sessions_per_day = '-' if len(filtered_df) == 0 else filtered_df['session_id'].nunique() / (((end_date - start_date).days) + 1)
@@ -671,6 +732,7 @@ def update_graphs(start_date, end_date, app_version, graph_4_severity_level, gra
     # Prepare the data
     if graph_7_toggle_button == False:
         coordinates_df = filtered_df[['country', 'session_id']]  # Adjust as necessary
+        coordinates_df = coordinates_df[coordinates_df['country'] != None]
         coordinates_df['country'] = coordinates_df['country'].replace(country_translation)
 
         # Group by country and sum the sessions
@@ -716,6 +778,7 @@ def update_graphs(start_date, end_date, app_version, graph_4_severity_level, gra
     else:
         # Assuming filtered_df already has 'timestamp' column
         coordinates_df = filtered_df[['country', 'session_id', 'timestamp']]  # Keep country, session_id, and timestamp
+        coordinates_df = coordinates_df[coordinates_df['country'] != None]
         coordinates_df['country'] = coordinates_df['country'].replace(country_translation)
 
         # Remove minutes and downcast to the nearest hour
@@ -824,6 +887,7 @@ def update_graphs(start_date, end_date, app_version, graph_4_severity_level, gra
             filtered_df = filtered_df[filtered_df['medical_class'] == graph_8_medical_class]
 
         hm_df = filtered_df[['location', 'session_id']]  # Ensure this contains lat, long, and session_id
+        hm_df = filtered_df[filtered_df['location'] != "[None, None]"]
         hm_df['latitude'] = hm_df['location'].apply(lambda x: eval(x)[0])
         hm_df['longitude'] = hm_df['location'].apply(lambda x: eval(x)[1])
 
@@ -874,6 +938,7 @@ def update_graphs(start_date, end_date, app_version, graph_4_severity_level, gra
             
         # Assuming filtered_df already has 'timestamp' and 'location' columns
         hm_df = filtered_df[['location', 'session_id', 'timestamp']]  # Ensure this contains lat, long, session_id, and timestamp
+        hm_df = filtered_df[filtered_df['location'] != "[None, None]"]
 
         # Convert location to latitude and longitude
         hm_df['latitude'] = hm_df['location'].apply(lambda x: eval(x)[0])
@@ -971,16 +1036,93 @@ def update_graphs(start_date, end_date, app_version, graph_4_severity_level, gra
 
     # --- Return the figures for all graphs ---
     return (
-        ('No sessions in last month' if percentage_change == '-' else [f"{percentage_change:.2f}%"]), 
-        text_style, 
+        ('No sessions in last month' if percentage_change_1 == '-' else [f"{percentage_change_1:.2f}%"]), 
+        text_style_1, 
+        ('No sessions with location disabled' if percentage_change_2 == '-' else [f"{percentage_change_2:.2f}%"]), 
+        text_style_2, 
         ('Not enough days' if average_sessions_per_day == '-' else [f"{average_sessions_per_day:.2f}"]),
         sessions_line_graph,  # Line graph for sessions per day
         medical_class_bar_chart,  # Bar chart for medical class percentages
         composition_graph,  # Bar chart for weekday and severity composition
         composition_graph_2,  # Bar chart for hour range and severity composition
         choropleth_map,  # Choropleth map for sessions by country
-        heatmap_map  # Heatmap for sessions by country
+        heatmap_map,  # Heatmap for sessions by country
     )
+
+
+
+
+##########################################################        PERFORMANCE PAGE       ##################################################################
+@app.callback(
+    [
+        Output('graph-1-1-performance', 'children'),
+        Output('graph-1-2-performance', 'children'),
+        Output('graph-1-3-performance', 'children'),
+    ],
+    [
+        Input('date-picker-range-users', 'start_date'),
+        Input('date-picker-range-users', 'end_date'),
+        Input('app-version-users', 'value')
+    ]
+)
+def update_performance_graphs(start_date, end_date, app_version):
+    # Filter the data based on the selected date range and app_version filter
+    start_date = pd.to_datetime(start_date).date()  # Convert to date
+    end_date = pd.to_datetime(end_date).date()  # Convert to date
+
+    # Filter the dataframe based on the date range
+    filtered_df = df[(df['timestamp'].dt.date >= start_date) & (df['timestamp'].dt.date <= end_date)]
+    
+    if app_version != 'All':  # Check if app_version is not the empty string
+        filtered_df = filtered_df[filtered_df['app_version'] == app_version]  # Apply the app_version filter
+
+    # Ensure response_times is a list of numbers
+    filtered_df['response_times'] = filtered_df['response_times'].apply(
+        lambda x: ast.literal_eval(x) if isinstance(x, str) else x
+    )
+    
+    ## FIRST PLOT - 1
+    # 1.1
+    # Flatten the 'response_times' column into a single list of all times
+    all_response_times = [time for sublist in filtered_df['response_times'] for time in sublist]
+    
+    # Calculate the average response time from the flattened list
+    average_response_time = np.mean(all_response_times)
+
+    # 1.2
+    # Group by the date part of the timestamp
+    filtered_df['date'] = filtered_df['timestamp'].dt.date
+
+    # List to hold daily average response times
+    daily_avg_response_times = []
+
+    # Loop through each group (day)
+    for date, group in filtered_df.groupby('date'):
+        # Flatten response times for each session in that day
+        daily_response_times = [time for sublist in group['response_times'] for time in sublist]
+
+        # Calculate the average response time for that day
+        if daily_response_times:  # Check if there are any response times for that day
+            daily_avg_response_times.append(np.mean(daily_response_times))
+
+    # Calculate the overall average response time
+    overall_daily_average_response_time = np.mean(daily_avg_response_times) if daily_avg_response_times else 0
+
+    # 1.3
+    # Calculate the length of 'response_times' for each session
+    filtered_df['response_times_len'] = filtered_df['response_times'].apply(len)
+
+    # Calculate the overall average response time length
+    overall_avg_response_times_len = filtered_df['response_times_len'].mean()
+
+    
+    # --- Return the figures for all graphs ---
+    return (
+        [str(round(average_response_time, 2))+ "s"],
+        [str(round(overall_daily_average_response_time, 2))+ "s"],
+        [str(round(overall_avg_response_times_len, 2))]
+    )
+
 
 
 # Run the app
