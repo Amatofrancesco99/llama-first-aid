@@ -1058,6 +1058,10 @@ def update_graphs(start_date, end_date, app_version, graph_4_severity_level, gra
         Output('graph-1-1-performance', 'children'),
         Output('graph-1-2-performance', 'children'),
         Output('graph-1-3-performance', 'children'),
+        Output('graph-2-1-performance', 'children'),
+        Output('graph-2-2-performance', 'children'),
+        Output('graph-2-3-performance', 'children'),
+        Output('graph-3-performance', 'figure'),
     ],
     [
         Input('date-picker-range-users', 'start_date'),
@@ -1115,12 +1119,114 @@ def update_performance_graphs(start_date, end_date, app_version):
     # Calculate the overall average response time length
     overall_avg_response_times_len = filtered_df['response_times_len'].mean()
 
+
+    ## SECOND PLOT - 2
+    # 2.1
+    # Create a column to determine the sum of response times
+    filtered_df['response_time_sum'] = filtered_df.apply(
+        lambda row: sum(row['response_times']) if row['severity'] is None else sum(row['response_times'][:-1]), axis=1
+    )
+
+    # Calculate the overall average response time sum for all sessions
+    overall_avg_response_time_sum = filtered_df['response_time_sum'].mean()
     
+    # 2.2
+    # Create a column to determine the last response time if severity is not null, or sum all response times if severity is null
+    filtered_df['last_response_time'] = filtered_df.apply(
+        lambda row: row['response_times'][-1] if row['severity'] is not None and len(row['response_times']) > 0 else np.nan, axis=1
+    )
+
+    # Filter rows where severity is not null (to focus only on these sessions)
+    filtered_df_severity_not_null = filtered_df[filtered_df['severity'].notnull()]
+
+    # Calculate the average of the last response time for all sessions with non-null severity
+    avg_last_response_time = filtered_df_severity_not_null['last_response_time'].mean()
+
+    # 2.3
+    avg_time_to_identify_and_solve = filtered_df['response_times'].apply(sum).sum() / len(filtered_df)
+
+
+    ## THIRD PLOT - 3
+    # Calculate the average response time for each session
+    filtered_df['avg_response_time'] = filtered_df['response_times'].apply(lambda x: sum(x) / len(x) if len(x) > 0 else 0)
+
+    # Calculate the average response time per day
+    filtered_df['date'] = filtered_df['timestamp'].dt.date
+    avg_response_per_day = filtered_df.groupby('date')['avg_response_time'].mean()
+
+    # Create a date range from start_date to end_date
+    date_range = pd.date_range(start=start_date, end=end_date)
+
+    # Reindex the series to include all dates in the range, filling missing dates with NaN
+    avg_response_per_day = avg_response_per_day.reindex(date_range.date, fill_value=np.nan)
+
+    # Create a DataFrame for the average response times per day
+    avg_response_df = pd.DataFrame({
+        'date': avg_response_per_day.index,
+        'avg_response_time': avg_response_per_day.values
+    })
+
+    # Create the line graph using plotly.express
+    avg_response_time_graph = px.line(
+        avg_response_df, 
+        x='date', 
+        y='avg_response_time',
+    )
+
+    # Add scatter trace for bullet points where the response time is not NaN (valid data points)
+    valid_data = avg_response_df.dropna()
+    avg_response_time_graph.add_traces(
+        go.Scatter(
+            x=valid_data['date'],
+            y=valid_data['avg_response_time'],
+            mode='markers',
+            marker=dict(size=6, symbol='circle', color='rgb(50, 50, 50)'),  # Small bullet points
+            name=None
+        )
+    )
+
+    # Customize the layout for transparent background
+    avg_response_time_graph.update_layout(
+        plot_bgcolor='rgba(0,0,0,0)',  # Transparent plot area
+        paper_bgcolor='rgba(0,0,0,0)',  # Transparent background for the entire figure
+        title_font=dict(size=14, family="Arial, sans-serif", color='rgb(50, 50, 50)', weight='bold'),
+        xaxis=dict(
+            title='Date',
+            title_font=dict(size=12, family="Arial, sans-serif", color='rgb(50, 50, 50)'),
+            tickfont=dict(size=10, family="Arial, sans-serif", color='rgb(100, 100, 100)'),
+            showgrid=False,  # Hide gridlines
+            gridcolor='rgb(200, 200, 200)',  # Light gridlines
+            gridwidth=0.5,
+            zeroline=True,  # Line at y=0
+            zerolinecolor='rgb(200, 200, 200)',
+            zerolinewidth=1
+        ),
+        yaxis=dict(
+            title='Average Response Time (Seconds)',
+            title_font=dict(size=12, family="Arial, sans-serif", color='rgb(50, 50, 50)'),
+            tickfont=dict(size=10, family="Arial, sans-serif", color='rgb(100, 100, 100)'),
+            showgrid=True,
+            gridcolor='rgb(200, 200, 200)',
+            gridwidth=0.5,
+            zeroline=True,
+            zerolinecolor='rgb(200, 200, 200)',
+            zerolinewidth=1
+        ),
+        margin=dict(l=10, r=10, t=10, b=30),
+        showlegend=False
+    )
+
+
+
     # --- Return the figures for all graphs ---
     return (
         [str(round(average_response_time, 2))+ "s"],
         [str(round(overall_daily_average_response_time, 2))+ "s"],
-        [str(round(overall_avg_response_times_len, 2))]
+        [str(round(overall_avg_response_times_len, 2))],
+        [str(round(overall_avg_response_time_sum, 2))+ "s"],
+        [str(round(avg_last_response_time, 2))+ "s"],
+        [str(round(avg_time_to_identify_and_solve, 2))+ "s"],
+        avg_response_time_graph
     )
 
 
