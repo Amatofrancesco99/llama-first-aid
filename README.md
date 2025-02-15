@@ -45,6 +45,7 @@ The acronym **LLAMA** in our app stands for a **Live Assistant for Medical Assis
 - **Location-Based Assistance**: The app utilizes the user’s geographical location to suggest nearby hospitals or emergency services, making it easier for the user to act quickly. Depending on the severity of the situation, LLAMA will suggest whether it’s better to contact emergency services or go to the hospital directly. This ensures the user can make an informed decision, optimizing the response time and care.
 - **Video Embedding in Web App**: All tutorial videos are directly embedded within the app, ensuring smooth access and no need for external platforms. This guarantees that users can access life-saving video demonstrations instantly without distractions or delays.
 - **Saving All Interactions in History**: For each session, **LLAMA First Aid** automatically saves the following data in a **GCP bucket**. The data is anonimized and is used solely for the purposes of generating dashboards, evaluating the performance of the LLM, and supporting other features. It ensures that all interactions are tracked and can be reviewed later, helping improve accuracy and offering insight into previous guidance. The data is used exclusively for system improvement, performance monitoring, and tracking over time.
+- **Advanced Insights Dashboard**: We have developed a comprehensive **dashboard** that provides advanced insights into the collected data. This dashboard includes real-time information on system performance, such as the most frequent medical emergencies, the locations where incidents are occurring most often, and trends over time. By analyzing this data, we can continuously improve the app’s response effectiveness and identify areas where additional resources may be needed.
 
 ---
 
@@ -57,11 +58,11 @@ The user accesses the LLAMA First Aid web application and provides key informati
 ### **2. AI-Driven Assistance**
 Using **Meta’s LLaMA** technology, the app processes the user’s responses and interprets the medical context. LLAMA then provides the most appropriate life-saving advice, guiding the user through the necessary actions.
 
-### **3. Agent-Based Response**
-LLAMA utilizes a system of **custom agents** to process the information provided by the user. Each agent is designed to handle a specific category of emergency (e.g., CPR, choking, wound care) and ensures the advice given is precise and relevant. These agents collaborate to provide the most appropriate guidance based on the emergency’s nature and severity.
+### **3. Triage Agent-Based Response**
+LLAMA uses a **triage agent** to first assess the severity of the emergency. This triage agent evaluates the situation based on the user’s input and determines how critical the situation is. Once the severity is assessed, the triage agent routes the request to the appropriate specialized agent. These specialized agents are tailored for different types of emergencies (e.g., CPR, choking, wound care) and ensure the advice given is precise and relevant. 
 
-- If the situation is severe (e.g., cardiac arrest), LLAMA activates emergency agents that will prioritize life-saving steps.
-- For less critical cases, agents provide guidance that allows the user to handle the situation calmly and effectively.
+- If the situation is severe (e.g., cardiac arrest), the triage agent will route the request to emergency agents that prioritize life-saving steps.
+- For less critical cases, the triage agent routes the request to agents that provide guidance for handling the situation in a calm and effective manner.
 
 ### **4. Search for the Best Answer**
 LLAMA pulls information not only from its internal database but also from external sources such as trusted websites and **YouTube**. This helps to ensure that the guidance provided is always up to date and accurate. By searching multiple sources, LLAMA cross-references information to deliver the best possible advice.
@@ -77,6 +78,9 @@ As users progress through the app, LLAMA continues to adapt its instructions bas
 
 ### **8. Hospital Suggestion**
 Based on the user's **location**, LLAMA evaluates the severity of the situation and suggests the nearest hospital or emergency service. If the emergency is critical, LLAMA will recommend calling an ambulance or contacting the nearest medical facility directly. In less severe cases, it may suggest the user proceed to the hospital on their own or continue with the first aid steps.
+
+### **9. Session Data and Insights**
+After each session, **LLAMA First Aid** saves interaction data, including the user's queries, responses, medical information, and location, in an anonymized form. This anonymized data is then used to generate valuable **insights** through advanced dashboards. The data helps track trends in emergency situations, monitor the system’s performance, and identify the most common medical emergencies and dangerous areas. This allows us to continually improve the application’s accuracy, responsiveness, and overall effectiveness in delivering life-saving guidance.
 
 ---
 
@@ -111,10 +115,10 @@ Based on the user's **location**, LLAMA evaluates the severity of the situation 
 
 - **Evaluation of Response Accuracy**: LLAMA will introduce a feature to **evaluate the correctness of the responses**. Users will be able to rate the quality and usefulness of the advice provided, which will allow LLAMA to continuously improve its accuracy through user feedback.
 
-- **Data Analytics & Alerts**: Future releases will introduce the capability to **analyze historical interaction data**, generating valuable insights through statistics and trend analysis. Additionally, the system will have the potential for **automatic alerts** to external parties (such as medical professionals or emergency contacts) when critical issues are identified, further enhancing the effectiveness of LLAMA First Aid in real-time emergencies.
+- **Alerting**: Future updates will enable the system to send **automatic alerts** to external parties, such as medical professionals or emergency contacts, when critical issues are detected. This will significantly enhance LLAMA First Aid's effectiveness during real-time emergencies.
 
 ---
 
 ## Why LLAMA First Aid?
 - **Immediate Response**: In critical emergencies, LLAMA First Aid provides **instant assistance**, offering users immediate, life-saving guidance.
-- **Comprehensive Coverage**: From basic injuries to life
+- **Comprehensive Coverage**: From basic injuries to lifes
